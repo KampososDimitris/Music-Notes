@@ -1,5 +1,7 @@
+from gui.main import App
+
 def main():
-    print("Hello from musicnotes!")
+    gui = App()
 
 
 if __name__ == "__main__":
