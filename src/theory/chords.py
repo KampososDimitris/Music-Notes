@@ -12,6 +12,7 @@ notes = [
     'G',
     'G#',
 ]
+# GOOD_PRACTICE Where should I store this, so it isn't duplicated in every module?
 
 chord_variants = {
     'Major': {
