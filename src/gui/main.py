@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
-import theory.chords as th
+import theory.chords as chords
+import theory.scales as scales
 
 MIN_X = 860
 MIN_Y = 480
@@ -57,7 +58,7 @@ class MenuFrame(tk.Frame):
         tk.Label(self, text="Note").grid(row=0, column=0, padx=5, pady=5)
 
         notes_list = ttk.Combobox(self, textvariable=self.selected_note, state='readonly')
-        notes_list['values'] = ['--'] + [note for note in th.notes]
+        notes_list['values'] = ['--'] + [note for note in chords.notes]
         notes_list.grid(row=0, column=1, pady=5)
         notes_list.bind('<<ComboboxSelected>>', self.pass_note_to_chord_frames)
 
@@ -112,7 +113,8 @@ class ContentFrame(tk.Frame):
             case 'Chords':
                 self.create_chord_frames()
             case 'Scales':
-                pass
+                # TODO Make scale frame scrollable.
+                self.create_scale_frames()
             case 'Circle of Fifths':
                 pass
             case 'default':
@@ -127,19 +129,32 @@ class ContentFrame(tk.Frame):
         row = 0
         column = 0
 
-        for variant in th.chord_variants:
+        for variant in chords.chord_variants:
             self.rowconfigure(row, weight=1)
             self.columnconfigure(column, weight=1)
 
             ChordFrame(
                 self,
                 variant,
-                th.chord_variants[variant]['notation'],
-                th.chord_variants[variant]['labels'],
+                chords.chord_variants[variant]['notation'],
+                chords.chord_variants[variant]['labels'],
             ).grid(row=row, column=column, sticky='nsew')
 
             column = column + 1 if column < N_OF_CHORDS_IN_ROW else 0
             if column == 0: row += 1
+
+    def create_scale_frames(self):
+        self.columnconfigure(0, weight=1)
+
+        for row, scale in enumerate(scales.scales):
+            self.rowconfigure(row, weight=1)
+
+            ScaleFrame(
+                self,
+                scale,
+                scales.scales[scale]['notation'],
+                scales.scales[scale]['labels'],
+            ).grid(row=row, column=0, sticky='ew')
 
 
 class ChordFrame(tk.Frame):
@@ -167,20 +182,51 @@ class ChordFrame(tk.Frame):
 
         notes_label = ' - '.join(self.labels)
         tk.Label(self, text=notes_label).grid(sticky='ns')
-
+        # TODO Make labels and notes sit in the center of the frame
         tk.Label(self, textvariable=self.chord_notes).grid(sticky='ns')
 
     def update_chord_notes(self, *args):
-        tmp_notes = th.calculate_chord_notes(
+        tmp_notes = chords.calculate_chord_notes(
             self.current_note.get(),
-            th.chord_variants[self.chord_name]['formula']
+            chords.chord_variants[self.chord_name]['formula']
         )
         self.chord_notes.set(' - '.join(tmp_notes))
 
 
-class ScalesFrame(tk.Frame):
-    pass
+class ScaleFrame(tk.Frame):
+    def __init__(self, container, scale_name, notation, labels):
+        super().__init__(container)
 
+        # Instance variables
+        self.container = container
+        self.scale_name = scale_name
+        self.notation = notation
+        self.labels = labels
+
+        self['borderwidth'] = 0.5
+        self['relief'] = 'raised'
+
+        # Components in frame
+        self.columnconfigure(0, weight=1)
+
+        self.current_note = tk.StringVar()
+        self.current_note.trace_add('write', self.update_scale_notes)
+        self.scale_notes = tk.StringVar()
+
+        tk.Label(self, text=f'{self.scale_name}{f'({self.notation})' if self.notation != '' else ''}', borderwidth=0.5, relief='groove')\
+            .grid(sticky='ew')
+
+        notes_label = ' - '.join(self.labels)
+        tk.Label(self, text=notes_label).grid(sticky='ns', pady=(5,0))
+
+        tk.Label(self, textvariable=self.scale_notes).grid(sticky='ns', pady=(0,5))
+
+    def update_scale_notes(self, *args):
+        tmp_notes = scales.calculate_scale_notes(
+            self.current_note.get(),
+            self.scale_name
+        )
+        self.scale_notes.set(' - '.join(tmp_notes))
 
 class CoFFrame(tk.Frame):
     pass
