@@ -11,6 +11,78 @@ natural_notes = [
 ]
 
 
+roots = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B']
+
+
+chord_variants = {
+    'Major': {
+        'notation': '',
+        'formula': [0, 4, 7],
+        'labels': ['1', '3', '5']
+    },
+    'Minor': {
+        'notation': 'm',
+        'formula': [0, 3, 7],
+        'labels': ['1', 'b3', '5']
+    },
+    'Diminished': {
+        'notation': 'dim',
+        'formula': [0, 3, 6],
+        'labels': ['1', 'b3', 'b5']
+    },
+    'Augmented': {
+        'notation': 'aug',
+        'formula': [0, 4, 8],
+        'labels': ['1', '3', '#5']
+    },
+    'Suspended 2nd': {
+        'notation': 'sus2',
+        'formula': [0, 2, 7],
+        'labels': ['1', '2', '5']
+    },
+    'Suspended 4th': {
+        'notation': 'sus4/sus',
+        'formula': [0, 5, 7],
+        'labels': ['1', '4', '5']
+    },
+    'Dominant 7th': {
+        'notation': '7',
+        'formula': [0, 4, 7, 10],
+        'labels': ['1', '3', '5', 'b7']
+    },
+    'Major 7th': {
+        'notation': 'maj7',
+        'formula': [0, 4, 7, 11],
+        'labels': ['1', '3', '5', '7']
+    },
+    'Minor 7th': {
+        'notation': 'm7',
+        'formula': [0, 3, 7, 10],
+        'labels': ['1', 'b3', '5', 'b7']
+    },
+    'Half-Diminished 7th': {
+        'notation': 'm7b5',
+        'formula': [0, 3, 6, 10],
+        'labels': ['1', 'b3', 'b5', 'b7']
+    },
+    'Diminished 7th': {
+        'notation': 'dim7',
+        'formula': [0, 3, 6, 9],
+        'labels': ['1', 'b3', 'b5', 'bb7']
+    },
+    'Major 6th': {
+        'notation': '6',
+        'formula': [0, 4, 7, 9],
+        'labels': ['1', '3', '5', '6']
+    },
+    'Minor 6th': {
+        'notation': 'm6',
+        'formula': [0, 3, 7, 9],
+        'labels': ['1', 'b3', '5', '6']
+    },
+}
+
+
 scales = {
     'Major': {
         'notation': 'Ionian',
@@ -78,25 +150,27 @@ scales = {
 N_OF_NATURAL_NOTES = 7
 
 
-def calculate_scale_notes(root, scale):
-    try:
-        scale = scales[scale]
-    except Exception:
-        raise Exception(f'Invalid scale: {scale}')
+def calculate_structure_notes(root, structure):
+    if structure in list(chord_variants.keys()):
+        structure = chord_variants[structure]
+    elif structure in list(scales.keys()):
+        structure = scales[structure]
+    else:
+        raise Exception(f'Invalid structure: {structure}')
 
     if not check_valid(root):
-        raise Exception(f'Invalid note: {root}')   
+        raise Exception(f'Invalid note: {root}')
 
-    degrees = calculate_scale_degrees(root, scale)
+    degrees = calculate_degrees(root, structure)
     notes_list = []
-
-    for idx, semitones in enumerate(scale['formula']):
-        notes_list.append(determine_next_note(root, degrees[idx], semitones))
+    
+    for idx, semitones in enumerate(structure['formula']):
+        notes_list.append(next_note(root, degrees[idx], semitones))
 
     return notes_list
 
 
-def determine_next_note(root, degree, semitones):
+def next_note(root, degree, semitones):
     note = root
 
     for _ in range(semitones):
@@ -185,22 +259,22 @@ def adjust_note(note, degree):
     return f'{degree}{intervals*accidental}'
 
 
-def is_seven_note_scale(scale):
-    return not (len(scale['labels']) < 7)
+def is_seven_note_structure(structure):
+    return not (len(structure['labels']) < 7)
 
 
-def calculate_scale_degrees(root, scale):
+def calculate_degrees(root, structure):
     root_idx = natural_notes.index(root[0])
     
-    if is_seven_note_scale(scale):
+    if is_seven_note_structure(structure):
         degrees = [
             natural_notes[(root_idx + i) % N_OF_NATURAL_NOTES] for i in range(7)
         ]
     else:
         degrees = []
 
-        for label in scale['labels']:
-            degree = int(label) if len(label) == 1 else int(label[1])
+        for label in structure['labels']:
+            degree = int(label) if len(label) == 1 else int(label[-1])
             degree_note_idx = (root_idx + (degree - 1)) % N_OF_NATURAL_NOTES
             degrees.append(natural_notes[degree_note_idx])
 
@@ -213,21 +287,21 @@ def check_valid(note):
     return False
 
 
-roots = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B']
+# def write_output():
+#     s = ''
+#     for root in roots:
+#         for chord_name in chord_variants.keys():
+#             if not is_seven_note_structure(chord_variants[chord_name]):
+#                 s += f'Root: {root}\n'
+#                 s += f'Chord: {chord_name}\n'
+#                 s += f'Notes: {' '.join(calculate_structure_notes(root, chord_name))}\n'
+#                 s += f"{'-'*50}\n"
+#     return s
 
-def write_output():
-    s = ''
-    for root in roots:
-        for scale_name in scales.keys():
-            if not is_seven_note_scale(scales[scale_name]):
-                s += f'Root: {root}\n'
-                s += f'Scale: {scale_name}\n'
-                s += f'Notes: {' '.join(calculate_scale_notes(root, scale_name))}\n'
-                s += f"{'-'*50}\n"
-    return s
+# import os
+# filepath = os.path.join(os.getcwd(), 'results.txt')
 
-import os
-filepath = os.path.join(os.getcwd(), 'results.txt')
-print(os.getcwd())
-with open(filepath, 'w') as f:
-    f.write(write_output())
+# with open(filepath, 'w') as f:
+#     f.write(write_output())
+
+print(list(chord_variants.keys()))
