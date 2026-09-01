@@ -11,3 +11,6 @@ wheels/
 
 # Editor / IDE
 .vscode/
+
+# Produced files
+*:Zone.Identifier
