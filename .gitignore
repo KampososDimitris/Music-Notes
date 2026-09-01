@@ -14,3 +14,4 @@ wheels/
 
 # Produced files
 *:Zone.Identifier
+*.spec
