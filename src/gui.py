@@ -8,7 +8,7 @@ from PIL import Image, ImageTk
 
 from utils import resource_path
 
-import theory.structures as st
+import structures as st
 
 X_AXIS = 800
 Y_AXIS = 500
