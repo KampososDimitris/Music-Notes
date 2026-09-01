@@ -1,10 +1,14 @@
+import os
+
 import tkinter as tk
 from tkinter import ttk
 
+from PIL import Image, ImageTk
+
 import theory.structures as st
 
-MIN_X = 860
-MIN_Y = 480
+MIN_X = 1080
+MIN_Y = 600
 MENU_OPTIONS = ['Chords', 'Scales', 'Circle of Fifths']
 N_OF_CHORDS_IN_ROW = 3
 
@@ -14,25 +18,20 @@ class App(tk.Tk):
         super().__init__()
 
         self.geometry = f"{MIN_X}x{MIN_Y}"
-        self.minsize(MIN_X, MIN_Y)
+        # self.minsize(MIN_X, MIN_Y)
         self.title('Music Notes')
+        self.resizable(False, False)
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=0)
         self.rowconfigure(1, weight=1)
 
         self.build_window()
-
+        
         self.update()
         self.mainloop()
 
     def build_window(self):
-        """
-        This will be used to create all the components of the main window.
-        This is done by creating a MenuFrame instance, that in turn 
-        is calling the ContentFrame once for each radio button option.
-        The content frames are then controlled by the menu frame, with the radio buttons.
-        """
         MenuFrame(self).grid(row=0, column=0, sticky="ew", padx=5, pady=5)
 
 
@@ -54,7 +53,7 @@ class MenuFrame(tk.Frame):
         self.selected_option = tk.StringVar()
         self.selected_note = tk.StringVar()
 
-        tk.Label(self, text="Note").grid(row=0, column=0, padx=5, pady=5)
+        tk.Label(self, text="Root").grid(row=0, column=0, padx=5, pady=5)
 
         notes_list = ttk.Combobox(self, textvariable=self.selected_note, state='readonly')
         notes_list['values'] = ['--'] + [note for note in st.roots]
@@ -107,15 +106,13 @@ class ContentFrame(tk.Frame):
         self['relief'] = 'sunken'
 
         # Components in frame
-        # TODO Create a frame depending on the option argument. Use the classes defined below.
         match option:
             case 'Chords':
                 self.create_chord_frames()
             case 'Scales':
-                # TODO Make scale frame scrollable.
                 self.create_scale_frames()
             case 'Circle of Fifths':
-                pass
+                self.create_cof_frame()
             case 'default':
                 tk.Label(self, text="Welcome to Music Notes!\nChoose a note and mode to begin.")\
                     .pack(expand=True)
@@ -155,6 +152,10 @@ class ContentFrame(tk.Frame):
                 st.scales[scale]['labels'],
             ).grid(row=row, column=0, sticky='ew')
 
+    def create_cof_frame(self):
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+        CoFFrame(self).grid(sticky='nsew')
 
 class ChordFrame(tk.Frame):
     def __init__(self, container, chord_name, notation, labels):
@@ -227,6 +228,21 @@ class ScaleFrame(tk.Frame):
         )
         self.scale_notes.set(' - '.join(tmp_notes))
 
-class CoFFrame(tk.Frame):
-    pass
 
+class CoFFrame(tk.Frame):
+    def __init__(self, container):
+        super().__init__(container)
+
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        # Components in frame
+        img_path = 'assets/img/circle_of_fifths_transparent.png'
+        img = Image.open(img_path)
+        img = img.resize((960, 850), Image.Resampling.LANCZOS)
+
+        img_tk = ImageTk.PhotoImage(img)
+
+        img_label = tk.Label(self, image=img_tk, anchor=tk.CENTER)
+        img_label.image = img_tk
+        img_label.grid(sticky='nsew')

@@ -303,5 +303,3 @@ def check_valid(note):
 
 # with open(filepath, 'w') as f:
 #     f.write(write_output())
-
-print(list(chord_variants.keys()))
