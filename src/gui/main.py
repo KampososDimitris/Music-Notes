@@ -2,6 +2,7 @@ import os
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 
 from PIL import Image, ImageTk
 
@@ -44,6 +45,8 @@ class MenuFrame(tk.Frame):
         # Instance variables
         self.container = container
         self.frames = {}
+        self.selected_option = tk.StringVar()
+        self.selected_note = tk.StringVar()
 
         # Styling
         self['borderwidth'] = 1.0
@@ -51,9 +54,6 @@ class MenuFrame(tk.Frame):
 
         # Components in frame
         self.columnconfigure(2, weight=3)
-
-        self.selected_option = tk.StringVar()
-        self.selected_note = tk.StringVar()
 
         tk.Label(self, text="Root").grid(row=0, column=0, padx=5, pady=5)
 
@@ -108,7 +108,7 @@ class ContentFrame(tk.Frame):
         self['relief'] = 'sunken'
 
         # Components in frame
-        match option:
+        match self.option:
             case 'Chords':
                 self.create_chord_frames()
             case 'Scales':
@@ -119,9 +119,7 @@ class ContentFrame(tk.Frame):
                 tk.Label(self, text="Welcome to Music Notes!\nChoose a note and mode to begin.")\
                     .pack(expand=True)
             case _:
-                # TODO How to handle this elegantly? Where should this exception lead? Open error window? Then what?
-                # Should this frame be deleted (somehow) before returning to caller?
-                raise Exception("Invalid content argument")
+                messagebox.showwarning('Warning', f'Invalid option: {self.option}.\nChoose a valid option from the menu.')
 
     def create_chord_frames(self):
         row = column = 0
@@ -193,11 +191,15 @@ class StructureFrame(tk.Frame):
         tk.Label(self, textvariable=self.structure_notes).grid(sticky='ns')
 
     def update_structure_notes(self, *args):
-        tmp_notes = st.calculate_structure_notes(
-            self.kind,
-            self.current_note.get(),
-            self.structure_name
-        )
+        try:
+            tmp_notes = st.calculate_structure_notes(
+                self.kind,
+                self.current_note.get(),
+                self.structure_name
+            )
+        except Exception as e:
+            messagebox.showwarning('Warning', e)
+
         if tmp_notes:
             self.structure_notes.set(' - '.join(tmp_notes))
 
