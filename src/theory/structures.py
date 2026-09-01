@@ -150,10 +150,10 @@ scales = {
 N_OF_NATURAL_NOTES = 7
 
 
-def calculate_structure_notes(root, structure):
-    if structure in list(chord_variants.keys()):
+def calculate_structure_notes(kind, root, structure):
+    if kind == 'Chords':
         structure = chord_variants[structure]
-    elif structure in list(scales.keys()):
+    elif kind == 'Scales':
         structure = scales[structure]
     else:
         raise Exception(f'Invalid structure: {structure}')
@@ -285,21 +285,3 @@ def check_valid(note):
     if re.fullmatch(r"[A-G](?:#|b)?", note):
         return True
     return False
-
-
-# def write_output():
-#     s = ''
-#     for root in roots:
-#         for chord_name in chord_variants.keys():
-#             if not is_seven_note_structure(chord_variants[chord_name]):
-#                 s += f'Root: {root}\n'
-#                 s += f'Chord: {chord_name}\n'
-#                 s += f'Notes: {' '.join(calculate_structure_notes(root, chord_name))}\n'
-#                 s += f"{'-'*50}\n"
-#     return s
-
-# import os
-# filepath = os.path.join(os.getcwd(), 'results.txt')
-
-# with open(filepath, 'w') as f:
-#     f.write(write_output())

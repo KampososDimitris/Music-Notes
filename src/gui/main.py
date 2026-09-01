@@ -5,20 +5,22 @@ from tkinter import ttk
 
 from PIL import Image, ImageTk
 
+from utils import resource_path
+
 import theory.structures as st
 
-MIN_X = 1080
-MIN_Y = 600
+X_AXIS = 800
+Y_AXIS = 500
 MENU_OPTIONS = ['Chords', 'Scales', 'Circle of Fifths']
-N_OF_CHORDS_IN_ROW = 3
-
+N_OF_ITEMS_ROWS = 3
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.geometry = f"{MIN_X}x{MIN_Y}"
-        # self.minsize(MIN_X, MIN_Y)
+        self.geometry = f"{X_AXIS}x{Y_AXIS}"
+        self.minsize(X_AXIS, Y_AXIS)
+        self.maxsize(X_AXIS, Y_AXIS)
         self.title('Music Notes')
         self.resizable(False, False)
 
@@ -56,7 +58,7 @@ class MenuFrame(tk.Frame):
         tk.Label(self, text="Root").grid(row=0, column=0, padx=5, pady=5)
 
         notes_list = ttk.Combobox(self, textvariable=self.selected_note, state='readonly')
-        notes_list['values'] = ['--'] + [note for note in st.roots]
+        notes_list['values'] = [note for note in st.roots]
         notes_list.grid(row=0, column=1, pady=5)
         notes_list.bind('<<ComboboxSelected>>', self.pass_note_to_chord_frames)
 
@@ -122,111 +124,82 @@ class ContentFrame(tk.Frame):
                 raise Exception("Invalid content argument")
 
     def create_chord_frames(self):
-        row = 0
-        column = 0
+        row = column = 0
 
         for variant in st.chord_variants:
             self.rowconfigure(row, weight=1)
             self.columnconfigure(column, weight=1)
 
-            ChordFrame(
+            StructureFrame(
                 self,
+                self.option,
                 variant,
                 st.chord_variants[variant]['notation'],
                 st.chord_variants[variant]['labels'],
             ).grid(row=row, column=column, sticky='nsew')
 
-            column = column + 1 if column < N_OF_CHORDS_IN_ROW else 0
+            column = column + 1 if column < N_OF_ITEMS_ROWS else 0
             if column == 0: row += 1
 
     def create_scale_frames(self):
-        self.columnconfigure(0, weight=1)
+        row = column = 0
 
-        for row, scale in enumerate(st.scales):
+        for scale in st.scales:
             self.rowconfigure(row, weight=1)
+            self.columnconfigure(column, weight=1)
 
-            ScaleFrame(
+            StructureFrame(
                 self,
+                self.option,
                 scale,
                 st.scales[scale]['notation'],
                 st.scales[scale]['labels'],
-            ).grid(row=row, column=0, sticky='ew')
+            ).grid(row=row, column=column, sticky='nsew')
+
+            column = column + 1 if column < N_OF_ITEMS_ROWS else 0
+            if column == 0: row += 1
 
     def create_cof_frame(self):
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
         CoFFrame(self).grid(sticky='nsew')
 
-class ChordFrame(tk.Frame):
-    def __init__(self, container, chord_name, notation, labels):
+
+class StructureFrame(tk.Frame):
+    def __init__(self, container, kind, structure_name, notation, labels):
         super().__init__(container)
 
         # Instance variables
-        self.container = container
-        self.chord_name = chord_name
+        self.kind = kind
+        self.structure_name = structure_name
         self.notation = notation
         self.labels = labels
+        self.current_note = tk.StringVar()
+        self.current_note.trace_add('write', self.update_structure_notes)
+        self.structure_notes = tk.StringVar()
 
+        # Styling
         self['borderwidth'] = 0.5
         self['relief'] = 'raised'
 
         # Components in frame
         self.columnconfigure(0, weight=1)
 
-        self.current_note = tk.StringVar()
-        self.current_note.trace_add('write', self.update_chord_notes)
-        self.chord_notes = tk.StringVar()
-
-        tk.Label(self, text=f'{self.chord_name}{f'({self.notation})' if self.notation != '' else ''}', borderwidth=0.5, relief='groove')\
+        tk.Label(self, text=f'{self.structure_name}{f'({self.notation})' if self.notation != '' else ''}', borderwidth=0.5, relief='groove')\
             .grid(sticky='ew')
 
         notes_label = ' - '.join(self.labels)
         tk.Label(self, text=notes_label).grid(sticky='ns')
-        # TODO Make labels and notes sit in the center of the frame
-        tk.Label(self, textvariable=self.chord_notes).grid(sticky='ns')
+        tk.Label(self, textvariable=self.structure_notes).grid(sticky='ns')
 
-    def update_chord_notes(self, *args):
+    def update_structure_notes(self, *args):
         tmp_notes = st.calculate_structure_notes(
+            self.kind,
             self.current_note.get(),
-            self.chord_name
+            self.structure_name
         )
-        self.chord_notes.set(' - '.join(tmp_notes))
-
-
-class ScaleFrame(tk.Frame):
-    def __init__(self, container, scale_name, notation, labels):
-        super().__init__(container)
-
-        # Instance variables
-        self.container = container
-        self.scale_name = scale_name
-        self.notation = notation
-        self.labels = labels
-
-        self['borderwidth'] = 0.5
-        self['relief'] = 'raised'
-
-        # Components in frame
-        self.columnconfigure(0, weight=1)
-
-        self.current_note = tk.StringVar()
-        self.current_note.trace_add('write', self.update_scale_notes)
-        self.scale_notes = tk.StringVar()
-
-        tk.Label(self, text=f'{self.scale_name}{f'({self.notation})' if self.notation != '' else ''}', borderwidth=0.5, relief='groove')\
-            .grid(sticky='ew')
-
-        notes_label = ' - '.join(self.labels)
-        tk.Label(self, text=notes_label).grid(sticky='ns', pady=(5,0))
-        # TODO Make items and labels don't disappear when minimized.
-        tk.Label(self, textvariable=self.scale_notes).grid(sticky='ns', pady=(0,5))
-
-    def update_scale_notes(self, *args):
-        tmp_notes = st.calculate_structure_notes(
-            self.current_note.get(),
-            self.scale_name
-        )
-        self.scale_notes.set(' - '.join(tmp_notes))
+        if tmp_notes:
+            self.structure_notes.set(' - '.join(tmp_notes))
 
 
 class CoFFrame(tk.Frame):
@@ -237,9 +210,9 @@ class CoFFrame(tk.Frame):
         self.columnconfigure(0, weight=1)
 
         # Components in frame
-        img_path = 'assets/img/circle_of_fifths_transparent.png'
+        img_path = resource_path('assets/img/circle_of_fifths_transparent.png')
         img = Image.open(img_path)
-        img = img.resize((960, 850), Image.Resampling.LANCZOS)
+        img = img.resize((400, 360), Image.Resampling.LANCZOS)
 
         img_tk = ImageTk.PhotoImage(img)
 
